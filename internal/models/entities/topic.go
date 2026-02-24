@@ -11,13 +11,14 @@ type Topic struct {
 	Entities []*Entity `gorm:"many2many:topic_entities;"`
 }
 
-func NewTopic(name string, fields map[string]FieldType) *Topic {
+func NewTopic(name string, fields map[string]FieldValueInfo) *Topic {
 	f := make([]*TopicField, 0, len(fields))
 	for name, fieldType := range fields {
 		f = append(f, &TopicField{
 			Field: &Field{
-				Name: name,
-				Type: fieldType,
+				Name:          name,
+				Type:          fieldType.FieldType,
+				ContainerType: fieldType.ContainerType,
 			},
 		})
 	}

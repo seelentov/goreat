@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"goreat/internal/convension"
 	"goreat/internal/models"
 	"goreat/internal/models/entities"
 
@@ -19,8 +20,17 @@ func NewEntityRepository(db *gorm.DB) *EntityRepositoryImpl {
 
 func (e *EntityRepositoryImpl) GetByID(id uint) (*entities.Entity, error) {
 	var entity entities.Entity
-	err := e.db.First(&entity, id).Error
+	err := e.db.Preload("Topic").Preload("Fields").First(&entity, id).Error
 	if err != nil {
+		return nil, err
+	}
+
+	fTypes, err := e.getScheme(entity.Topic.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := deserializeFields(&entity, fTypes); err != nil {
 		return nil, err
 	}
 
@@ -40,8 +50,27 @@ func (e *EntityRepositoryImpl) Create(topicName string, values map[string]interf
 	var entity entities.Entity
 
 	for name, v := range values {
-		entity.Fields = append(entity.Fields, entities.NewEntityField(name, fTypes[name], v))
+		v, err := convension.SerializeValue(v, fTypes[name].FieldType, fTypes[name].ContainerType)
+		if err != nil {
+			return nil, err
+		}
+
+		entity.Fields = append(entity.Fields, &entities.EntityField{
+			Name:  name,
+			Value: v,
+		})
 	}
+
+	if err := deserializeFields(&entity, fTypes); err != nil {
+		return nil, err
+	}
+
+	var topic entities.Topic
+	if err := e.db.First(&topic, "name = ?", topicName).Error; err != nil {
+		return nil, err
+	}
+
+	entity.TopicID = topic.ID
 
 	return &entity, e.db.Create(&entity).Error
 }
@@ -49,7 +78,7 @@ func (e *EntityRepositoryImpl) Create(topicName string, values map[string]interf
 func (e *EntityRepositoryImpl) UpdateByID(id uint, values map[string]interface{}) error {
 	return e.db.Transaction(func(tx *gorm.DB) error {
 		var entity entities.Entity
-		err := tx.Preload("Topic").First(&entity, id).Error
+		err := tx.Preload("Topic").Preload("Fields").First(&entity, id).Error
 		if err != nil {
 			return err
 		}
@@ -64,34 +93,54 @@ func (e *EntityRepositoryImpl) UpdateByID(id uint, values map[string]interface{}
 			fieldsIndexes[f.Name] = i
 		}
 
-		for name, value := range fTypes {
+		for name, value := range values {
 			index := fieldsIndexes[name]
-			entity.Fields[index].SetValue(value)
+
+			v, err := convension.SerializeValue(value, fTypes[name].FieldType, fTypes[name].ContainerType)
+			if err != nil {
+				return err
+			}
+
+			entity.Fields[index].Value = v
 		}
 
-		return tx.Save(entity).Error
+		return tx.Save(&entity).Error
 	})
 }
 
 func (e *EntityRepositoryImpl) DeleteByID(id uint) error {
-	return e.db.Delete(&entities.Entity{}, id).Error
+	return e.db.Unscoped().Delete(&entities.Entity{}, id).Error
 }
 
 func (e *EntityRepositoryImpl) DeleteBy(topicName string, query *models.Query) error {
 	panic("TODO: Implement")
 }
 
-func (e *EntityRepositoryImpl) getScheme(topicName string) (map[string]entities.FieldType, error) {
+func (e *EntityRepositoryImpl) getScheme(topicName string) (map[string]entities.FieldValueInfo, error) {
 	var topic entities.Topic
 	err := e.db.Preload("Fields").First(&topic, "name = ?", topicName).Error
 	if err != nil {
 		return nil, err
 	}
 
-	fTypes := make(map[string]entities.FieldType, len(topic.Fields))
+	fTypes := make(map[string]entities.FieldValueInfo, len(topic.Fields))
 	for _, f := range topic.Fields {
-		fTypes[f.Name] = f.Type
+		fTypes[f.Name] = entities.FieldValueInfo{
+			FieldType:     f.Type,
+			ContainerType: f.ContainerType,
+		}
 	}
 
 	return fTypes, nil
+}
+
+func deserializeFields(entity *entities.Entity, fTypes map[string]entities.FieldValueInfo) error {
+	for _, f := range entity.Fields {
+		v, err := convension.DeserializeValue(f.Value, fTypes[f.Name].FieldType, fTypes[f.Name].ContainerType)
+		if err != nil {
+			return err
+		}
+		f.ValueDecoded = v
+	}
+	return nil
 }

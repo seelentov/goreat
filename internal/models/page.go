@@ -7,6 +7,4 @@ type Page struct {
 
 	Path     string
 	Template string
-
-	Queries []*QueryData
 }

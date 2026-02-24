@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"goreat/internal/convension"
 	"goreat/internal/models/entities"
 	"time"
 
@@ -10,13 +11,37 @@ import (
 
 const TEST_TOPIC = "test"
 
+func ClearDB(db *gorm.DB) error {
+	for _, m := range dbModels {
+		if err := db.Unscoped().Where("1 = 1").Delete(m).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func SeedTestTopic(db *gorm.DB) error {
-	fields := map[string]entities.FieldType{
-		"string": entities.FieldTypeString,
-		"int":    entities.FieldTypeInt,
-		"float":  entities.FieldTypeFloat,
-		"bool":   entities.FieldTypeBool,
-		"date":   entities.FieldTypeDateTime,
+	fields := map[string]entities.FieldValueInfo{
+		"string": {
+			FieldType:     entities.FieldTypeString,
+			ContainerType: entities.ContainerTypeSingle,
+		},
+		"int": {
+			FieldType:     entities.FieldTypeInt,
+			ContainerType: entities.ContainerTypeSingle,
+		},
+		"float": {
+			FieldType:     entities.FieldTypeFloat,
+			ContainerType: entities.ContainerTypeSingle,
+		},
+		"bool": {
+			FieldType:     entities.FieldTypeBool,
+			ContainerType: entities.ContainerTypeSingle,
+		},
+		"date": {
+			FieldType:     entities.FieldTypeDateTime,
+			ContainerType: entities.ContainerTypeSingle,
+		},
 	}
 
 	topic := entities.NewTopic("test", fields)
@@ -34,15 +59,17 @@ func SeedTestTopic(db *gorm.DB) error {
 			"date":   time.Now().Add(time.Hour * time.Duration(i)),
 		}
 
-		v := make(map[string]entities.FieldValuePair, len(values))
+		v := make(map[string][]byte, len(values))
 		for fieldName, value := range values {
-			v[fieldName] = entities.FieldValuePair{
-				FieldType: fields[fieldName],
-				Value:     value,
+			serVal, err := convension.SerializeValue(value, fields[fieldName].FieldType, fields[fieldName].ContainerType)
+			if err != nil {
+				return err
 			}
+			v[fieldName] = serVal
 		}
 
 		entity := entities.NewEntity(v)
+		entity.TopicID = topic.ID
 
 		if err := db.Create(&entity).Error; err != nil {
 			return err

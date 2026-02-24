@@ -5,26 +5,37 @@ import (
 	"goreat/internal/db"
 	"testing"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 var entityRepoImpl EntityRepository
+var database *gorm.DB
 
-func setup() {
+func setup(t *testing.T) {
 	d, err := db.NewInMemoryDB()
 	if err != nil {
-		panic(err)
+		t.Error(err)
 	}
 
-	err = db.SeedTestTopic(d)
+	database = d
+
+	err = db.SeedTestTopic(database)
 	if err != nil {
-		panic(err)
+		t.Error(err)
 	}
 
-	entityRepoImpl = NewEntityRepository(d)
+	entityRepoImpl = NewEntityRepository(database)
+}
+
+func teardown(t *testing.T) {
+	if err := db.ClearDB(database); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestEntityRepositoryImpl_GetByID(t *testing.T) {
-	setup()
+	setup(t)
 
 	entity, err := entityRepoImpl.GetByID(1)
 	if err != nil {
@@ -36,15 +47,17 @@ func TestEntityRepositoryImpl_GetByID(t *testing.T) {
 	if entity.ID != 1 {
 		t.Error("entity id is not 1")
 	}
+
+	teardown(t)
 }
 
 func TestEntityRepositoryImpl_Create(t *testing.T) {
-	setup()
+	setup(t)
 
 	i := 99
 	values := map[string]interface{}{
 		"string": fmt.Sprintf("string %v", i),
-		"int":    i,
+		"int":    int64(i),
 		"float":  float64(i) / 1000.0,
 		"bool":   i%2 == 0,
 		"date":   time.Now().Add(time.Hour * time.Duration(i)),
@@ -73,13 +86,95 @@ func TestEntityRepositoryImpl_Create(t *testing.T) {
 	}
 
 	for _, f := range entity.Fields {
-		v, err := f.GetValue()
-		if err != nil {
-			t.Error(err)
+		if f.Name == "date" {
+			if !f.ValueDecoded.(time.Time).Equal(values[f.Name].(time.Time)) {
+				t.Errorf("field %v is %v, expected %v", f.Name, f.ValueDecoded, values[f.Name])
+			}
+
+			continue
 		}
 
-		if v != values[f.Name] {
-			t.Errorf("field %v is not %v", f.Name, values[f.Name])
+		if f.ValueDecoded != values[f.Name] {
+			t.Errorf("field %v is %v, expected %v", f.Name, f.ValueDecoded, values[f.Name])
 		}
 	}
+
+	teardown(t)
+}
+
+func TestEntityRepositoryImpl_UpdateByID(t *testing.T) {
+	setup(t)
+
+	i := 99
+
+	values := map[string]interface{}{
+		"string": fmt.Sprintf("string %v", i),
+		"int":    int64(i),
+		"float":  float64(i) / 1000.0,
+		"bool":   i%2 == 0,
+		"date":   time.Now().Add(time.Hour * time.Duration(i)),
+	}
+
+	if err := entityRepoImpl.UpdateByID(1, values); err != nil {
+		t.Error(err)
+	}
+
+	entity, err := entityRepoImpl.GetByID(1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if entity == nil {
+		t.Error("entity is nil")
+	}
+
+	if entity.ID != 1 {
+		t.Errorf("entity id is not 1\n")
+	}
+
+	for _, f := range entity.Fields {
+		if f.Name == "date" {
+			if !f.ValueDecoded.(time.Time).Equal(values[f.Name].(time.Time)) {
+				t.Errorf("field %v is %v, expected %v", f.Name, f.ValueDecoded, values[f.Name])
+			}
+
+			continue
+		}
+
+		if f.ValueDecoded != values[f.Name] {
+			t.Errorf("field %v is %v, expected %v", f.Name, f.ValueDecoded, values[f.Name])
+		}
+	}
+
+	teardown(t)
+}
+
+func TestEntityRepositoryImpl_DeleteByID(t *testing.T) {
+	setup(t)
+
+	if err := entityRepoImpl.DeleteByID(1); err != nil {
+		t.Error(err)
+	}
+
+	entity, err := entityRepoImpl.GetByID(1)
+	if err != gorm.ErrRecordNotFound {
+		t.Error(err)
+	}
+	if entity != nil {
+		t.Error("entity is not nil")
+	}
+
+	teardown(t)
+}
+
+func TestEntityRepositoryImpl_GetBy(t *testing.T) {
+	setup(t)
+
+	teardown(t)
+}
+
+func TestEntityRepositoryImpl_DeleteBy(t *testing.T) {
+	setup(t)
+
+	teardown(t)
 }
