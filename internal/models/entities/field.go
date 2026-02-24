@@ -29,14 +29,6 @@ type Field struct {
 	ContainerType ContainerType
 }
 
-func NewField(name string, fType FieldType, cType ContainerType) *Field {
-	return &Field{
-		Name:          name,
-		Type:          fType,
-		ContainerType: cType,
-	}
-}
-
 type FieldValueInfo struct {
 	FieldType     FieldType
 	ContainerType ContainerType

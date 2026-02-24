@@ -4,37 +4,36 @@ import (
 	"gorm.io/gorm"
 )
 
-type Entity struct {
+type DBEntity struct {
 	gorm.Model
 
-	TopicID uint   `gorm:"index"`
-	Topic   *Topic `gorm:"foreignKey:TopicID;references:ID"`
+	TopicID uint     `gorm:"index"`
+	Topic   *DBTopic `gorm:"foreignKey:TopicID;references:ID"`
 
-	Fields []*EntityField `gorm:"foreignKey:EntityID;constraint:OnDelete:CASCADE"`
+	Fields []*DBEntityField `gorm:"foreignKey:EntityID;constraint:OnDelete:CASCADE"`
 }
 
-func NewEntity(fTypes map[string][]byte) *Entity {
-	fields := make([]*EntityField, 0, len(fTypes))
+func NewEntity(fTypes map[string][]byte) *DBEntity {
+	fields := make([]*DBEntityField, 0, len(fTypes))
 
 	for name, value := range fTypes {
-		ef := &EntityField{
+		ef := &DBEntityField{
 			Name:  name,
 			Value: value,
-		}
-		if ef == nil {
-			return nil
 		}
 		fields = append(fields, ef)
 	}
 
-	return &Entity{
+	return &DBEntity{
 		Fields: fields,
 	}
 }
 
-type EntityField struct {
-	EntityID uint    `gorm:"index"`
-	Entity   *Entity `gorm:"foreignKey:EntityID;references:ID"`
+type DBEntityField struct {
+	gorm.Model
+
+	EntityID uint      `gorm:"index"`
+	Entity   *DBEntity `gorm:"foreignKey:EntityID;references:ID"`
 
 	Name  string
 	Value []byte

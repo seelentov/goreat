@@ -2,19 +2,19 @@ package entities
 
 import "gorm.io/gorm"
 
-type Topic struct {
+type DBTopic struct {
 	gorm.Model
 
-	Name   string        `gorm:"uniqueIndex"`
-	Fields []*TopicField `gorm:"foreignKey:TopicID;constraint:OnDelete:CASCADE"`
+	Name   string          `gorm:"uniqueIndex"`
+	Fields []*DBTopicField `gorm:"foreignKey:TopicID;constraint:OnDelete:CASCADE"`
 
-	Entities []*Entity `gorm:"many2many:topic_entities;"`
+	Entities []*DBEntity `gorm:"many2many:topic_entities;"`
 }
 
-func NewTopic(name string, fields map[string]FieldValueInfo) *Topic {
-	f := make([]*TopicField, 0, len(fields))
+func NewTopic(name string, fields map[string]FieldValueInfo) *DBTopic {
+	f := make([]*DBTopicField, 0, len(fields))
 	for name, fieldType := range fields {
-		f = append(f, &TopicField{
+		f = append(f, &DBTopicField{
 			Field: &Field{
 				Name:          name,
 				Type:          fieldType.FieldType,
@@ -23,15 +23,15 @@ func NewTopic(name string, fields map[string]FieldValueInfo) *Topic {
 		})
 	}
 
-	return &Topic{
+	return &DBTopic{
 		Name:   name,
 		Fields: f,
 	}
 }
 
-type TopicField struct {
+type DBTopicField struct {
 	*Field
 
-	TopicID uint   `gorm:"index"`
-	Topic   *Topic `gorm:"foreignKey:TopicID;references:ID"`
+	TopicID uint     `gorm:"index"`
+	Topic   *DBTopic `gorm:"foreignKey:TopicID;references:ID"`
 }

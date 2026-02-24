@@ -44,4 +44,6 @@ type Query struct {
 
 	Limit  uint
 	Offset uint
+
+	Type QueryType
 }

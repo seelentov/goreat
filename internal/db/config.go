@@ -5,10 +5,10 @@ import (
 )
 
 var entityDbModels = []interface{}{
-	&entities.Entity{},
-	&entities.EntityField{},
-	&entities.Topic{},
-	&entities.TopicField{},
+	&entities.DBEntity{},
+	&entities.DBEntityField{},
+	&entities.DBTopic{},
+	&entities.DBTopicField{},
 }
 
 var dbModels = append(
