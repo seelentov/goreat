@@ -1,14 +1,14 @@
-package models
+package entities
 
 import "gorm.io/gorm"
 
 type Topic struct {
 	gorm.Model
 
-	Name   string
-	Fields []*TopicField
+	Name   string        `gorm:"uniqueIndex"`
+	Fields []*TopicField `gorm:"foreignKey:TopicID;constraint:OnDelete:CASCADE"`
 
-	Entities []*Entity
+	Entities []*Entity `gorm:"many2many:topic_entities;"`
 }
 
 func NewTopic(name string, fields map[string]FieldType) *Topic {
@@ -31,6 +31,6 @@ func NewTopic(name string, fields map[string]FieldType) *Topic {
 type TopicField struct {
 	*Field
 
-	TopicID uint
-	Topic   *Topic
+	TopicID uint   `gorm:"index"`
+	Topic   *Topic `gorm:"foreignKey:TopicID;references:ID"`
 }

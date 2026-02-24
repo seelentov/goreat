@@ -1,5 +1,7 @@
 package models
 
+import "gorm.io/gorm"
+
 type OrderDirection int
 
 const (
@@ -37,6 +39,13 @@ const (
 	QueryTypeCount
 	QueryTypeExists
 )
+
+type QueryData struct {
+	gorm.Model
+
+	PageID uint
+	Page   *Page
+}
 
 type Query struct {
 	Filters []*Filters

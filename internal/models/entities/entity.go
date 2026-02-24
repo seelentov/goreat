@@ -20,7 +20,10 @@ type FieldValuePair struct {
 type Entity struct {
 	gorm.Model
 
-	Fields []*EntityField
+	TopicID uint   `gorm:"index"`
+	Topic   *Topic `gorm:"foreignKey:TopicID;references:ID"`
+
+	Fields []*EntityField `gorm:"foreignKey:EntityID;constraint:OnDelete:CASCADE"`
 }
 
 func NewEntity(fTypes map[string]FieldValuePair) *Entity {
@@ -42,8 +45,8 @@ func NewEntity(fTypes map[string]FieldValuePair) *Entity {
 type EntityField struct {
 	*Field
 
-	EntityID uint
-	Entity   *Entity
+	EntityID uint    `gorm:"index"`
+	Entity   *Entity `gorm:"foreignKey:EntityID;references:ID"`
 
 	Value []byte
 }
