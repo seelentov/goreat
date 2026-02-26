@@ -8,30 +8,28 @@ type DBTopic struct {
 	Name   string          `gorm:"uniqueIndex"`
 	Fields []*DBTopicField `gorm:"foreignKey:TopicID;constraint:OnDelete:CASCADE"`
 
-	Entities []*DBEntity `gorm:"many2many:topic_entities;"`
+	Entities []*DBEntity `gorm:"foreignKey:TopicID;constraint:OnDelete:CASCADE"`
 }
 
 func NewTopic(name string, fields map[string]FieldValueInfo) *DBTopic {
-	f := make([]*DBTopicField, 0, len(fields))
+	fis := make([]*DBTopicField, len(fields))
+	i := 0
 	for name, fieldType := range fields {
-		f = append(f, &DBTopicField{
-			Field: &Field{
-				Name:          name,
+		f := &DBTopicField{
+			DefinitionField: DefinitionField{
+				Field: Field{
+					Name: name,
+				},
 				Type:          fieldType.FieldType,
 				ContainerType: fieldType.ContainerType,
 			},
-		})
+		}
+		fis[i] = f
+		i++
 	}
 
 	return &DBTopic{
 		Name:   name,
-		Fields: f,
+		Fields: fis,
 	}
-}
-
-type DBTopicField struct {
-	*Field
-
-	TopicID uint     `gorm:"index"`
-	Topic   *DBTopic `gorm:"foreignKey:TopicID;references:ID"`
 }

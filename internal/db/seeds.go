@@ -2,14 +2,11 @@ package db
 
 import (
 	"fmt"
-	"goreat/internal/convension"
 	"goreat/internal/models/entities"
 	"time"
 
 	"gorm.io/gorm"
 )
-
-const TEST_TOPIC = "test"
 
 func ClearDB(db *gorm.DB) error {
 	for _, m := range dbModels {
@@ -50,7 +47,7 @@ func SeedTestTopic(db *gorm.DB) error {
 		return err
 	}
 
-	for i := range 10 {
+	for i := range 100 {
 		values := map[string]interface{}{
 			"string": fmt.Sprintf("string %v", i),
 			"int":    i,
@@ -59,17 +56,10 @@ func SeedTestTopic(db *gorm.DB) error {
 			"date":   time.Now().Add(time.Hour * time.Duration(i)),
 		}
 
-		v := make(map[string][]byte, len(values))
-		for fieldName, value := range values {
-			serVal, err := convension.SerializeValue(value, fields[fieldName].FieldType, fields[fieldName].ContainerType)
-			if err != nil {
-				return err
-			}
-			v[fieldName] = serVal
+		entity, err := entities.NewDBEntity(values)
+		if err != nil {
+			return err
 		}
-
-		entity := entities.NewEntity(v)
-		entity.TopicID = topic.ID
 
 		if err := db.Create(&entity).Error; err != nil {
 			return err

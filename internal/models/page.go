@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"goreat/internal/models/queries"
+
+	"gorm.io/gorm"
+)
 
 type DBPage struct {
 	gorm.Model
@@ -8,5 +12,5 @@ type DBPage struct {
 	Path     string `gorm:"uniqueIndex"`
 	Template string
 
-	Queries []*Query `gorm:"type:json"`
+	Queries []*queries.Query `gorm:"type:json"`
 }

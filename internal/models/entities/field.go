@@ -1,7 +1,5 @@
 package entities
 
-import "gorm.io/gorm"
-
 type FieldType int
 
 const (
@@ -10,7 +8,6 @@ const (
 	FieldTypeFloat
 	FieldTypeBool
 	FieldTypeDateTime
-
 	FieldTypeSource
 )
 
@@ -22,11 +19,24 @@ const (
 )
 
 type Field struct {
-	gorm.Model
+	Name string
+}
 
-	Name          string
+type DefinitionField struct {
+	Field
+
 	Type          FieldType
 	ContainerType ContainerType
+}
+
+func NewDefinitionField(name string, fType FieldType, cType ContainerType) *DefinitionField {
+	return &DefinitionField{
+		Field: Field{
+			Name: name,
+		},
+		ContainerType: cType,
+		Type:          fType,
+	}
 }
 
 type FieldValueInfo struct {
@@ -35,7 +45,7 @@ type FieldValueInfo struct {
 }
 
 type FieldValueData struct {
-	*FieldValueInfo
+	FieldValueInfo
 
 	Value any
 }

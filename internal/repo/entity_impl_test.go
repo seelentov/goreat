@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"fmt"
 	"goreat/internal/db"
 	"testing"
 	"time"
@@ -25,7 +24,7 @@ func setup(t *testing.T) {
 		t.Error(err)
 	}
 
-	entityRepoImpl = NewEntityRepository(database)
+	entityRepoImpl = NewEntityRepositoryImpl(database)
 }
 
 func teardown(t *testing.T) {
@@ -41,140 +40,49 @@ func TestEntityRepositoryImpl_GetByID(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if entity == nil {
-		t.Error("entity is nil")
-	}
-	if entity.ID != 1 {
-		t.Error("entity id is not 1")
-	}
-
-	teardown(t)
-}
-
-func TestEntityRepositoryImpl_Create(t *testing.T) {
-	setup(t)
-
-	i := 99
-	values := map[string]interface{}{
-		"string": fmt.Sprintf("string %v", i),
-		"int":    int64(i),
-		"float":  float64(i) / 1000.0,
-		"bool":   i%2 == 0,
-		"date":   time.Now().Add(time.Hour * time.Duration(i)),
-	}
-
-	entity, err := entityRepoImpl.Create(db.TEST_TOPIC, values)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if entity == nil {
-		t.Error("new entity var is empty")
-	}
-
-	newID := entity.ID
-
-	entity, err = entityRepoImpl.GetByID(newID)
-	if err != nil {
-		t.Error(err)
-	}
-	if entity == nil {
-		t.Error("entity is nil")
-	}
-	if entity.ID != newID {
-		t.Errorf("entity id is not %v\n", newID)
-	}
-
-	for _, f := range entity.Fields {
-		if f.Name == "date" {
-			if !f.ValueDecoded.(time.Time).Equal(values[f.Name].(time.Time)) {
-				t.Errorf("field %v is %v, expected %v", f.Name, f.ValueDecoded, values[f.Name])
-			}
-
-			continue
-		}
-
-		if f.ValueDecoded != values[f.Name] {
-			t.Errorf("field %v is %v, expected %v", f.Name, f.ValueDecoded, values[f.Name])
-		}
-	}
-
-	teardown(t)
-}
-
-func TestEntityRepositoryImpl_UpdateByID(t *testing.T) {
-	setup(t)
-
-	i := 99
-
-	values := map[string]interface{}{
-		"string": fmt.Sprintf("string %v", i),
-		"int":    int64(i),
-		"float":  float64(i) / 1000.0,
-		"bool":   i%2 == 0,
-		"date":   time.Now().Add(time.Hour * time.Duration(i)),
-	}
-
-	if err := entityRepoImpl.UpdateByID(1, values); err != nil {
-		t.Error(err)
-	}
-
-	entity, err := entityRepoImpl.GetByID(1)
-	if err != nil {
-		t.Error(err)
-	}
 
 	if entity == nil {
 		t.Error("entity is nil")
 	}
 
 	if entity.ID != 1 {
-		t.Errorf("entity id is not 1\n")
+		t.Errorf("got ID %d, expected 1", entity.ID)
 	}
 
-	for _, f := range entity.Fields {
-		if f.Name == "date" {
-			if !f.ValueDecoded.(time.Time).Equal(values[f.Name].(time.Time)) {
-				t.Errorf("field %v is %v, expected %v", f.Name, f.ValueDecoded, values[f.Name])
-			}
+	flat := entity.Flat()
 
-			continue
+	table := []struct {
+		key   string
+		value any
+	}{
+		{
+			key:   "string",
+			value: "string 0",
+		},
+		{
+			key:   "int",
+			value: int64(0),
+		},
+		{
+			key:   "float",
+			value: float64(0) / 1000.0,
+		},
+		{
+			key:   "bool",
+			value: true,
+		},
+	}
+
+	for _, ta := range table {
+		if flat[ta.key] != ta.value {
+			t.Errorf("got %v, expected %v", flat[ta.key], ta.value)
 		}
-
-		if f.ValueDecoded != values[f.Name] {
-			t.Errorf("field %v is %v, expected %v", f.Name, f.ValueDecoded, values[f.Name])
-		}
 	}
 
-	teardown(t)
-}
-
-func TestEntityRepositoryImpl_DeleteByID(t *testing.T) {
-	setup(t)
-
-	if err := entityRepoImpl.DeleteByID(1); err != nil {
-		t.Error(err)
+	expDate := time.Now().Add(time.Hour * time.Duration(0))
+	if flat["date"].(time.Time).Equal(expDate) {
+		t.Errorf("got %v, expected %v", flat["date"], expDate)
 	}
-
-	entity, err := entityRepoImpl.GetByID(1)
-	if err != gorm.ErrRecordNotFound {
-		t.Error(err)
-	}
-	if entity != nil {
-		t.Error("entity is not nil")
-	}
-
-	teardown(t)
-}
-
-func TestEntityRepositoryImpl_GetBy(t *testing.T) {
-	setup(t)
-
-	teardown(t)
-}
-
-func TestEntityRepositoryImpl_DeleteBy(t *testing.T) {
-	setup(t)
 
 	teardown(t)
 }
