@@ -28,4 +28,5 @@ type Query struct {
 
 func (q *Query) ToDB(db *gorm.DB, fTypes map[string]entities.FieldValueInfo) (*gorm.DB, error) {
 	panic("implement me")
+
 }

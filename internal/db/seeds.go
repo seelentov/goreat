@@ -39,6 +39,10 @@ func SeedTestTopic(db *gorm.DB) error {
 			FieldType:     entities.FieldTypeDateTime,
 			ContainerType: entities.ContainerTypeSingle,
 		},
+		"string_list": {
+			FieldType:     entities.FieldTypeString,
+			ContainerType: entities.ContainerTypeList,
+		},
 	}
 
 	topic := entities.NewTopic("test", fields)
@@ -49,11 +53,12 @@ func SeedTestTopic(db *gorm.DB) error {
 
 	for i := range 100 {
 		values := map[string]interface{}{
-			"string": fmt.Sprintf("string %v", i),
-			"int":    i,
-			"float":  float64(i) / 1000.0,
-			"bool":   i%2 == 0,
-			"date":   time.Now().Add(time.Hour * time.Duration(i)),
+			"string":      fmt.Sprintf("string %v", i),
+			"int":         i,
+			"float":       float64(i) / 1000.0,
+			"bool":        i%2 == 0,
+			"date":        time.Now().Add(time.Hour * time.Duration(i)),
+			"string_list": []string{fmt.Sprintf("string %v", i*10), fmt.Sprintf("string %v", i*20), fmt.Sprintf("string %v", i*30)},
 		}
 
 		entity, err := entities.NewDBEntity(values)
