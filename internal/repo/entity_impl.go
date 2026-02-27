@@ -53,28 +53,25 @@ func (e EntityRepositoryImpl) UpdateByID(id uint, fTypes map[string]interface{})
 		fieldIndexes[f.Name] = i
 	}
 
-	return e.db.Transaction(func(tx *gorm.DB) error {
-		for key, value := range fTypes {
-			i := fieldIndexes[key]
-			field := entity.Fields[i]
-
-			newField, err := entities.NewDBEntityField(key, value)
-			if err != nil {
-				return err
-			}
-
-			newField.ID = field.ID
-
-			newField.EntityID = entity.ID
-			newField.Entity = entity
-
-			if err := tx.Save(newField).Error; err != nil {
-				return err
-			}
+	for key, value := range fTypes {
+		idx, ok := fieldIndexes[key]
+		if !ok {
+			continue
 		}
 
-		return nil
-	})
+		field := &entity.Fields[idx]
+
+		if err := (*field).SetValue(value); err != nil {
+			return err
+		}
+
+		err = e.db.Model(field).Association("Value").Replace((*field).Value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return e.db.Save(entity).Error
 }
 
 func (e EntityRepositoryImpl) DeleteByID(id uint) error {

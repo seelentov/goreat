@@ -21,24 +21,32 @@ func NewDBEntityField(name string, value any) (*DBEntityField, error) {
 	d := &DBEntityField{}
 	d.Name = name
 
+	if err := d.SetValue(value); err != nil {
+		return nil, err
+	}
+
+	return d, nil
+}
+
+func (e *DBEntityField) SetValue(value any) error {
 	rv := reflect.ValueOf(value)
 	if rv.Kind() == reflect.Slice {
 		size := rv.Len()
-		d.Value = make([]*DBEntityFieldValue, size)
+		e.Value = make([]*DBEntityFieldValue, size)
 		for i := 0; i < size; i++ {
 			val, err := NewDBEntityFieldValue(rv.Index(i).Interface())
 			if err != nil {
-				return nil, err
+				return err
 			}
-			d.Value[i] = val
+			e.Value[i] = val
 		}
 	} else {
 		val, err := NewDBEntityFieldValue(value)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		d.Value = []*DBEntityFieldValue{val}
+		e.Value = []*DBEntityFieldValue{val}
 	}
 
-	return d, nil
+	return nil
 }

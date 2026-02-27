@@ -1,7 +1,10 @@
 package repo
 
 import (
+	"errors"
+	"fmt"
 	"goreat/internal/db"
+	"os"
 	"testing"
 	"time"
 
@@ -11,30 +14,41 @@ import (
 var entityRepoImpl EntityRepository
 var database *gorm.DB
 
-func setup(t *testing.T) {
-	d, err := db.NewInMemoryDB()
+var tempDBFilePath string
+
+func setup() {
+	tempDBFilePath = fmt.Sprintf("test_%d.db", time.Now().UnixNano())
+	d, err := db.NewFileDB(tempDBFilePath)
 	if err != nil {
-		t.Error(err)
+		panic(err)
 	}
 
 	database = d
 
 	err = db.SeedTestTopic(database)
 	if err != nil {
-		t.Error(err)
+		panic(err)
 	}
 
 	entityRepoImpl = NewEntityRepositoryImpl(database)
 }
 
-func teardown(t *testing.T) {
-	if err := db.ClearDB(database); err != nil {
-		t.Error(err)
+func teardown() {
+	defer os.Remove(tempDBFilePath)
+
+	sqlDB, err := database.DB()
+	if err != nil {
+		panic(err)
+	}
+	
+	if err := sqlDB.Close(); err != nil {
+		panic(err)
 	}
 }
 
 func TestEntityRepositoryImpl_GetByID(t *testing.T) {
-	setup(t)
+	setup()
+	defer teardown()
 
 	entity, err := entityRepoImpl.GetByID(1)
 	if err != nil {
@@ -50,39 +64,125 @@ func TestEntityRepositoryImpl_GetByID(t *testing.T) {
 	}
 
 	flat := entity.Flat()
+	table := getValues(0)
+	testEntity(flat, table, t)
+}
 
-	table := []struct {
-		key   string
-		value any
-	}{
-		{
-			key:   "string",
-			value: "string 0",
-		},
-		{
-			key:   "int",
-			value: int64(0),
-		},
-		{
-			key:   "float",
-			value: float64(0) / 1000.0,
-		},
-		{
-			key:   "bool",
-			value: true,
-		},
+func TestEntityRepositoryImpl_Create(t *testing.T) {
+	setup()
+	defer teardown()
+	i := 1
+
+	entity, err := entityRepoImpl.Create("test", getValues(i))
+	if err != nil {
+		t.Error(err)
 	}
 
-	for _, ta := range table {
-		if flat[ta.key] != ta.value {
-			t.Errorf("got %v, expected %v", flat[ta.key], ta.value)
+	newEntity, err := entityRepoImpl.GetByID(entity.ID)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if newEntity == nil {
+		t.Error("entity is nil")
+	}
+
+	if newEntity.ID != entity.ID {
+		t.Errorf("got ID %d, expected %d", entity.ID, entity.ID)
+	}
+
+	flat := newEntity.Flat()
+	table := getValues(i)
+	testEntity(flat, table, t)
+}
+
+func TestEntityRepositoryImpl_UpdateByID(t *testing.T) {
+	setup()
+	defer teardown()
+	i := 1
+
+	entity, err := entityRepoImpl.GetByID(1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if entity == nil {
+		t.Error("entity is nil")
+	}
+
+	if err := entityRepoImpl.UpdateByID(entity.ID, getValues(i)); err != nil {
+		t.Error(err)
+	}
+
+	newEntity, err := entityRepoImpl.GetByID(entity.ID)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if newEntity == nil {
+		t.Error("entity is nil")
+	}
+
+	if newEntity.ID != entity.ID {
+		t.Errorf("got ID %d, expected %d", entity.ID, entity.ID)
+	}
+
+	flat := newEntity.Flat()
+	table := getValues(i)
+	testEntity(flat, table, t)
+}
+
+func TestEntityRepositoryImpl_DeleteByID(t *testing.T) {
+	setup()
+	defer teardown()
+	id := uint(1)
+
+	if err := entityRepoImpl.DeleteByID(id); err != nil {
+		t.Error(err)
+	}
+
+	entity, err := entityRepoImpl.GetByID(id)
+
+	if err == nil {
+		t.Error("error is nil")
+	}
+
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Error(err)
+	}
+
+	if entity != nil {
+		t.Error("entity is not nil")
+	}
+}
+
+func testEntity(actual, expected map[string]interface{}, t *testing.T) {
+	for key, value := range expected {
+		if key == "date" {
+			continue
+		}
+
+		if actual[key] != value {
+			t.Errorf("got %v, expected %v", actual[key], value)
 		}
 	}
 
-	expDate := time.Now().Add(time.Hour * time.Duration(0))
-	if flat["date"].(time.Time).Equal(expDate) {
-		t.Errorf("got %v, expected %v", flat["date"], expDate)
+	if _, ok := expected["date"]; ok {
+		expDate := time.Now().Add(time.Hour * time.Duration(0))
+		if actual["date"].(time.Time).Equal(expDate) {
+			t.Errorf("got %v, expected %v", actual["date"], expDate)
+		}
 	}
+}
 
-	teardown(t)
+func getValues(i int) map[string]interface{} {
+	m := make(map[string]interface{}, 4)
+
+	m["string"] = fmt.Sprintf("string %v", i)
+	m["int"] = int64(i)
+	m["float"] = float64(i) / 1000.0
+	m["bool"] = i%2 == 0
+	m["date"] = time.Now().Add(time.Hour * time.Duration(i))
+
+	return m
 }
