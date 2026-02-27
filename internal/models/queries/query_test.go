@@ -70,10 +70,10 @@ func TestQuery_ToDB(t *testing.T) {
 			},
 		},
 		Limit: &limit,
-		Type:  QueryTypeCount,
+		Type:  QueryTypeData,
 	}
 
-	toDB, err := q.ToDB(database)
+	toDB, err := q.ToDB(database, db.TestTopicFields)
 	if err != nil {
 		t.Error(err)
 	}
@@ -81,6 +81,10 @@ func TestQuery_ToDB(t *testing.T) {
 	var ens []entities.DBEntity
 	if err := toDB.Find(&ens).Error; err != nil {
 		t.Error(err)
+	}
+
+	if len(ens) == 0 {
+		t.Errorf("Expected %v entities, got %v", limit, 0)
 	}
 
 	if len(ens) > 10 {
@@ -103,6 +107,132 @@ func TestQuery_ToDB(t *testing.T) {
 
 		if !strings.Contains(en["string"].(string), "1") {
 			t.Errorf("string field not filtered")
+		}
+	}
+}
+
+func TestQuery_ToDB_Count(t *testing.T) {
+	setup()
+	defer teardown()
+
+	q := Query{
+		Topic: "test",
+		Filters: []*Filter{
+			{
+				Field: "int",
+				Type:  FilterTypeGreaterThan,
+				Value: "10",
+			},
+		},
+		Type: QueryTypeCount,
+	}
+
+	toDB, err := q.ToDB(database, db.TestTopicFields)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var count int
+	if err := toDB.Model(&entities.DBEntity{}).Scan(&count).Error; err != nil {
+		t.Error(err)
+	}
+
+	if count == 0 {
+		t.Errorf("Expected count > 0, got %v", count)
+	}
+}
+
+func TestQuery_ToDB_Exists(t *testing.T) {
+	setup()
+	defer teardown()
+
+	q := Query{
+		Topic: "test",
+		Filters: []*Filter{
+			{
+				Field: "string",
+				Type:  FilterTypeEquals,
+				Value: "not_existing_value_123",
+			},
+		},
+		Type: QueryTypeExists,
+	}
+
+	toDB, err := q.ToDB(database, db.TestTopicFields)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var exists int
+	err = toDB.Model(&entities.DBEntity{}).Scan(&exists).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		t.Error(err)
+	}
+
+	if exists != 0 {
+		t.Errorf("Expected not exists (0), got %v", exists)
+	}
+
+	// Test existing
+	q2 := Query{
+		Topic: "test",
+		Type:  QueryTypeExists,
+	}
+
+	toDB2, err := q2.ToDB(database, db.TestTopicFields)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = toDB2.Model(&entities.DBEntity{}).Scan(&exists).Error
+	if err != nil {
+		t.Error(err)
+	}
+
+	if exists != 1 {
+		t.Errorf("Expected exists (1), got %v", exists)
+	}
+}
+
+func TestQuery_ToDB_OffsetAndDescOrder(t *testing.T) {
+	setup()
+	defer teardown()
+
+	limit := uint(5)
+	offset := uint(2)
+	q := Query{
+		Topic: "test",
+		Orders: []*Order{
+			{
+				Field:     "int",
+				Direction: OrderDirectionDesc,
+			},
+		},
+		Limit:  &limit,
+		Offset: &offset,
+		Type:   QueryTypeData,
+	}
+
+	toDB, err := q.ToDB(database, db.TestTopicFields)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var ens []entities.DBEntity
+	if err := toDB.Find(&ens).Error; err != nil {
+		t.Error(err)
+	}
+
+	if len(ens) > int(limit) {
+		t.Errorf("Expected max %v entities, got %v", limit, len(ens))
+	}
+
+	if len(ens) > 1 {
+		en1 := ens[0].Flat()
+		en2 := ens[1].Flat()
+
+		if en1["int"].(int64) < en2["int"].(int64) {
+			t.Errorf("Entities are not ordered in DESC direction")
 		}
 	}
 }
