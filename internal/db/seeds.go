@@ -17,35 +17,35 @@ func ClearDB(db *gorm.DB) error {
 	return nil
 }
 
-func SeedTestTopic(db *gorm.DB) error {
-	fields := map[string]entities.FieldValueInfo{
-		"string": {
-			FieldType:     entities.FieldTypeString,
-			ContainerType: entities.ContainerTypeSingle,
-		},
-		"int": {
-			FieldType:     entities.FieldTypeInt,
-			ContainerType: entities.ContainerTypeSingle,
-		},
-		"float": {
-			FieldType:     entities.FieldTypeFloat,
-			ContainerType: entities.ContainerTypeSingle,
-		},
-		"bool": {
-			FieldType:     entities.FieldTypeBool,
-			ContainerType: entities.ContainerTypeSingle,
-		},
-		"date": {
-			FieldType:     entities.FieldTypeDateTime,
-			ContainerType: entities.ContainerTypeSingle,
-		},
-		"string_list": {
-			FieldType:     entities.FieldTypeString,
-			ContainerType: entities.ContainerTypeList,
-		},
-	}
+var TestTopicFields = map[string]entities.FieldValueInfo{
+	"string": {
+		FieldType:     entities.FieldTypeString,
+		ContainerType: entities.ContainerTypeSingle,
+	},
+	"int": {
+		FieldType:     entities.FieldTypeInt,
+		ContainerType: entities.ContainerTypeSingle,
+	},
+	"float": {
+		FieldType:     entities.FieldTypeFloat,
+		ContainerType: entities.ContainerTypeSingle,
+	},
+	"bool": {
+		FieldType:     entities.FieldTypeBool,
+		ContainerType: entities.ContainerTypeSingle,
+	},
+	"date": {
+		FieldType:     entities.FieldTypeDateTime,
+		ContainerType: entities.ContainerTypeSingle,
+	},
+	"string_list": {
+		FieldType:     entities.FieldTypeString,
+		ContainerType: entities.ContainerTypeList,
+	},
+}
 
-	topic := entities.NewTopic("test", fields)
+func SeedTestTopic(db *gorm.DB) error {
+	topic := entities.NewTopic("test", TestTopicFields)
 
 	if err := db.Create(topic).Error; err != nil {
 		return err
