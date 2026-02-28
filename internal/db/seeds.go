@@ -17,7 +17,7 @@ func ClearDB(db *gorm.DB) error {
 	return nil
 }
 
-var TestTopicFields = map[string]entities.FieldValueInfo{
+var TestTopicFields = map[string]entities.FieldInfo{
 	"string": {
 		FieldType:     entities.FieldTypeString,
 		ContainerType: entities.ContainerTypeSingle,
@@ -45,6 +45,20 @@ var TestTopicFields = map[string]entities.FieldValueInfo{
 }
 
 func SeedTestTopic(db *gorm.DB) error {
+	var topicCount int64
+	if err := db.Model(&entities.DBTopic{}).Where("name = ?", "test").Count(&topicCount).Error; err != nil {
+		return err
+	}
+
+	var entityCount int64
+	if err := db.Model(&entities.DBEntity{}).Count(&entityCount).Error; err != nil {
+		return err
+	}
+
+	if topicCount > 0 && entityCount >= 100 {
+		return nil
+	}
+
 	topic := entities.NewTopic("test", TestTopicFields)
 
 	if err := db.Create(topic).Error; err != nil {
@@ -65,6 +79,8 @@ func SeedTestTopic(db *gorm.DB) error {
 		if err != nil {
 			return err
 		}
+
+		entity.Topic = topic
 
 		if err := db.Create(&entity).Error; err != nil {
 			return err

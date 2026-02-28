@@ -11,7 +11,7 @@ type DBTopic struct {
 	Entities []*DBEntity `gorm:"foreignKey:TopicID;constraint:OnDelete:CASCADE"`
 }
 
-func NewTopic(name string, fields map[string]FieldValueInfo) *DBTopic {
+func NewTopic(name string, fields map[string]FieldInfo) *DBTopic {
 	fis := make([]*DBTopicField, len(fields))
 	i := 0
 	for name, fieldType := range fields {
@@ -20,8 +20,10 @@ func NewTopic(name string, fields map[string]FieldValueInfo) *DBTopic {
 				Field: Field{
 					Name: name,
 				},
-				Type:          fieldType.FieldType,
-				ContainerType: fieldType.ContainerType,
+				FieldInfo: FieldInfo{
+					FieldType:     fieldType.FieldType,
+					ContainerType: fieldType.ContainerType,
+				},
 			},
 		}
 		fis[i] = f

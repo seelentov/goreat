@@ -26,17 +26,9 @@ type Query struct {
 	Type QueryType
 }
 
-func (q *Query) ToDB(db *gorm.DB, fTypes map[string]entities.FieldValueInfo) (*gorm.DB, error) {
-	switch q.Type {
-	case QueryTypeExists:
-		db = db.Select("1")
-	case QueryTypeCount:
-		db = db.Select("count(*)")
-	case QueryTypeData:
-		fallthrough
-	default:
-		db = db.Select("*")
-	}
+func (q *Query) ToDB(db *gorm.DB, fTypes map[string]entities.FieldInfo) (*gorm.DB, error) {
+	db = db.Model(&entities.DBEntity{})
+	db = db.Preload("Fields.Value")
 
 	db = db.Joins("JOIN db_topics ON db_topics.id = db_entities.topic_id")
 	db = db.Where("db_topics.name = ?", q.Topic)
@@ -97,6 +89,8 @@ func (q *Query) ToDB(db *gorm.DB, fTypes map[string]entities.FieldValueInfo) (*g
 			db = db.Where(column+" >= ?", f.Value)
 		case FilterTypeLessThanOrEquals:
 			db = db.Where(column+" <= ?", f.Value)
+		default:
+			return nil, entities.ErrType
 		}
 	}
 

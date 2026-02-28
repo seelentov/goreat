@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -17,7 +16,7 @@ var database *gorm.DB
 var tempDBFilePath string
 
 func setup() {
-	tempDBFilePath = fmt.Sprintf("test_%d.db", time.Now().UnixNano())
+	tempDBFilePath = fmt.Sprintf("test_%v.db", "query")
 	d, err := db.NewFileDB(tempDBFilePath)
 	if err != nil {
 		panic(err)
@@ -78,7 +77,9 @@ func TestQuery_ToDB(t *testing.T) {
 		t.Error(err)
 	}
 
-	var ens []entities.DBEntity
+	toDB = toDB.Select("db_entities.*")
+
+	var ens []*entities.DBEntity
 	if err := toDB.Find(&ens).Error; err != nil {
 		t.Error(err)
 	}
@@ -132,6 +133,8 @@ func TestQuery_ToDB_Count(t *testing.T) {
 		t.Error(err)
 	}
 
+	toDB = toDB.Select("count(*)")
+
 	var count int
 	if err := toDB.Model(&entities.DBEntity{}).Scan(&count).Error; err != nil {
 		t.Error(err)
@@ -163,8 +166,10 @@ func TestQuery_ToDB_Exists(t *testing.T) {
 		t.Error(err)
 	}
 
+	toDB = toDB.Select("1")
+
 	var exists int
-	err = toDB.Model(&entities.DBEntity{}).Scan(&exists).Error
+	err = toDB.Scan(&exists).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		t.Error(err)
 	}
@@ -173,7 +178,6 @@ func TestQuery_ToDB_Exists(t *testing.T) {
 		t.Errorf("Expected not exists (0), got %v", exists)
 	}
 
-	// Test existing
 	q2 := Query{
 		Topic: "test",
 		Type:  QueryTypeExists,
@@ -184,7 +188,9 @@ func TestQuery_ToDB_Exists(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = toDB2.Model(&entities.DBEntity{}).Scan(&exists).Error
+	toDB2 = toDB.Select("1")
+
+	err = toDB2.Scan(&exists).Error
 	if err != nil {
 		t.Error(err)
 	}

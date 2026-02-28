@@ -22,11 +22,14 @@ type Field struct {
 	Name string
 }
 
+type FieldInfo struct {
+	FieldType     FieldType
+	ContainerType ContainerType
+}
+
 type DefinitionField struct {
 	Field
-
-	Type          FieldType
-	ContainerType ContainerType
+	FieldInfo
 }
 
 func NewDefinitionField(name string, fType FieldType, cType ContainerType) *DefinitionField {
@@ -34,18 +37,9 @@ func NewDefinitionField(name string, fType FieldType, cType ContainerType) *Defi
 		Field: Field{
 			Name: name,
 		},
-		ContainerType: cType,
-		Type:          fType,
+		FieldInfo: FieldInfo{
+			ContainerType: cType,
+			FieldType:     fType,
+		},
 	}
-}
-
-type FieldValueInfo struct {
-	FieldType     FieldType
-	ContainerType ContainerType
-}
-
-type FieldValueData struct {
-	FieldValueInfo
-
-	Value any
 }

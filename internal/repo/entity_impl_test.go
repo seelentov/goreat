@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"goreat/internal/db"
+	"goreat/internal/models/queries"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -30,7 +32,8 @@ func setup() {
 		panic(err)
 	}
 
-	entityRepoImpl = NewEntityRepositoryImpl(database)
+	topicRepoImpl := NewTopicRepository(database)
+	entityRepoImpl = NewEntityRepositoryImpl(topicRepoImpl, database)
 }
 
 func teardown() {
@@ -40,7 +43,7 @@ func teardown() {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	if err := sqlDB.Close(); err != nil {
 		panic(err)
 	}
@@ -153,6 +156,70 @@ func TestEntityRepositoryImpl_DeleteByID(t *testing.T) {
 
 	if entity != nil {
 		t.Error("entity is not nil")
+	}
+}
+
+func TestEntityRepositoryImpl_ByQuery(t *testing.T) {
+	setup()
+	defer teardown()
+
+	limit := uint(10)
+	q := queries.Query{
+		Topic: "test",
+		Filters: []*queries.Filter{
+			{
+				Field: "string",
+				Type:  queries.FilterTypeContains,
+				Value: "1",
+			},
+			{
+				Field: "int",
+				Type:  queries.FilterTypeGreaterThan,
+				Value: "10",
+			},
+		},
+		Orders: []*queries.Order{
+			{
+				Field:     "int",
+				Direction: queries.OrderDirectionAsc,
+			},
+		},
+		Limit: &limit,
+		Type:  queries.QueryTypeData,
+	}
+
+	res := entityRepoImpl.ByQuery(q)
+	if res.Error != nil {
+		t.Error(res.Error)
+	}
+
+	ens := res.Entities
+
+	if len(ens) == 0 {
+		t.Errorf("Expected %v entities, got %v", limit, 0)
+	}
+
+	if len(ens) > 10 {
+		t.Errorf("Expected %v entities, got %v", limit, len(ens))
+	}
+
+	i := int64(0)
+	for _, entity := range ens {
+		en := entity.Flat()
+
+		if i > en["int"].(int64) {
+			t.Errorf("int field not ordered")
+		} else {
+			i = en["int"].(int64)
+		}
+
+		if en["int"].(int64) < 10 {
+			t.Errorf("int field not filtered")
+		}
+
+		if !strings.Contains(en["string"].(string), "1") {
+			t.Errorf("string field not filtered")
+		}
 	}
 }
 
