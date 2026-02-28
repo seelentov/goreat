@@ -1,33 +1,35 @@
-package db
+package db_test
 
 import (
+	"goreat/internal/db"
 	"testing"
 
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
+func setupDB(t *testing.T) *gorm.DB {
+	t.Helper()
 
-func setup() {
-	d, err := NewInMemoryDB()
+	d, err := db.NewSQLiteInMemoryDB()
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	db = d
+
+	return d
 }
 
 func TestClearDB(t *testing.T) {
-	setup()
+	d := setupDB(t)
 
-	if err := ClearDB(db); err != nil {
+	if err := db.ClearDB(d); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestSeedTestTopic(t *testing.T) {
-	setup()
+	d := setupDB(t)
 
-	if err := SeedTestTopic(db); err != nil {
+	if err := db.SeedTestTopic(d); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -17,7 +17,7 @@ var tempDBFilePath string
 
 func setup() {
 	tempDBFilePath = fmt.Sprintf("test_%v.db", "query")
-	d, err := db.NewFileDB(tempDBFilePath)
+	d, err := db.NewSQLiteFileDB(tempDBFilePath)
 	if err != nil {
 		panic(err)
 	}
@@ -188,7 +188,7 @@ func TestQuery_ToDB_Exists(t *testing.T) {
 		t.Error(err)
 	}
 
-	toDB2 = toDB.Select("1")
+	toDB2 = toDB2.Session(&gorm.Session{}).Select("1")
 
 	err = toDB2.Scan(&exists).Error
 	if err != nil {

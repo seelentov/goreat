@@ -27,7 +27,7 @@ type Query struct {
 }
 
 func (q *Query) ToDB(db *gorm.DB, fTypes map[string]entities.FieldInfo) (*gorm.DB, error) {
-	db = db.Model(&entities.DBEntity{})
+	db = db.Session(&gorm.Session{}).Model(&entities.DBEntity{})
 	db = db.Preload("Fields.Value")
 
 	db = db.Joins("JOIN db_topics ON db_topics.id = db_entities.topic_id")

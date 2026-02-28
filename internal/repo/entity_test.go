@@ -1,10 +1,11 @@
-package repo
+package repo_test
 
 import (
 	"errors"
 	"fmt"
 	"goreat/internal/db"
 	"goreat/internal/models/queries"
+	"goreat/internal/repo"
 	"os"
 	"strings"
 	"testing"
@@ -13,47 +14,37 @@ import (
 	"gorm.io/gorm"
 )
 
-var entityRepoImpl EntityRepository
 var database *gorm.DB
 
-var tempDBFilePath string
+func setupEntityTest(t *testing.T) *repo.EntityRepository {
+	t.Helper()
 
-func setup() {
-	tempDBFilePath = fmt.Sprintf("test_%d.db", time.Now().UnixNano())
-	d, err := db.NewFileDB(tempDBFilePath)
+	tempDBFilePath := fmt.Sprintf("test_%d.db", time.Now().UnixNano())
+	database, err := db.NewSQLiteFileDB(tempDBFilePath)
 	if err != nil {
-		panic(err)
+		t.Fatalf("failed to create db: %v", err)
 	}
 
-	database = d
-
-	err = db.SeedTestTopic(database)
-	if err != nil {
-		panic(err)
+	if err := db.SeedTestTopic(database); err != nil {
+		t.Fatalf("failed to seed db: %v", err)
 	}
 
-	topicRepoImpl := NewTopicRepository(database)
-	entityRepoImpl = NewEntityRepositoryImpl(topicRepoImpl, database)
-}
+	t.Cleanup(func() {
+		sqlDB, err := database.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+		_ = os.Remove(tempDBFilePath)
+	})
 
-func teardown() {
-	defer os.Remove(tempDBFilePath)
-
-	sqlDB, err := database.DB()
-	if err != nil {
-		panic(err)
-	}
-
-	if err := sqlDB.Close(); err != nil {
-		panic(err)
-	}
+	topicRepoImpl := repo.NewTopicRepository(database)
+	return repo.NewEntityRepository(topicRepoImpl, database)
 }
 
 func TestEntityRepositoryImpl_GetByID(t *testing.T) {
-	setup()
-	defer teardown()
+	entityRepo := setupEntityTest(t)
 
-	entity, err := entityRepoImpl.GetByID(1)
+	entity, err := entityRepo.GetByID(1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,16 +63,15 @@ func TestEntityRepositoryImpl_GetByID(t *testing.T) {
 }
 
 func TestEntityRepositoryImpl_Create(t *testing.T) {
-	setup()
-	defer teardown()
+	entityRepo := setupEntityTest(t)
 	i := 1
 
-	entity, err := entityRepoImpl.Create("test", getValues(i))
+	entity, err := entityRepo.Create("test", getValues(i))
 	if err != nil {
 		t.Error(err)
 	}
 
-	newEntity, err := entityRepoImpl.GetByID(entity.ID)
+	newEntity, err := entityRepo.GetByID(entity.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -100,11 +90,10 @@ func TestEntityRepositoryImpl_Create(t *testing.T) {
 }
 
 func TestEntityRepositoryImpl_UpdateByID(t *testing.T) {
-	setup()
-	defer teardown()
+	entityRepo := setupEntityTest(t)
 	i := 1
 
-	entity, err := entityRepoImpl.GetByID(1)
+	entity, err := entityRepo.GetByID(1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -113,11 +102,11 @@ func TestEntityRepositoryImpl_UpdateByID(t *testing.T) {
 		t.Error("entity is nil")
 	}
 
-	if err := entityRepoImpl.UpdateByID(entity.ID, getValues(i)); err != nil {
+	if err := entityRepo.UpdateByID(entity.ID, getValues(i)); err != nil {
 		t.Error(err)
 	}
 
-	newEntity, err := entityRepoImpl.GetByID(entity.ID)
+	newEntity, err := entityRepo.GetByID(entity.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -136,15 +125,14 @@ func TestEntityRepositoryImpl_UpdateByID(t *testing.T) {
 }
 
 func TestEntityRepositoryImpl_DeleteByID(t *testing.T) {
-	setup()
-	defer teardown()
+	entityRepo := setupEntityTest(t)
 	id := uint(1)
 
-	if err := entityRepoImpl.DeleteByID(id); err != nil {
+	if err := entityRepo.DeleteByID(id); err != nil {
 		t.Error(err)
 	}
 
-	entity, err := entityRepoImpl.GetByID(id)
+	entity, err := entityRepo.GetByID(id)
 
 	if err == nil {
 		t.Error("error is nil")
@@ -160,8 +148,7 @@ func TestEntityRepositoryImpl_DeleteByID(t *testing.T) {
 }
 
 func TestEntityRepositoryImpl_ByQuery(t *testing.T) {
-	setup()
-	defer teardown()
+	entityRepo := setupEntityTest(t)
 
 	limit := uint(10)
 	q := queries.Query{
@@ -188,7 +175,7 @@ func TestEntityRepositoryImpl_ByQuery(t *testing.T) {
 		Type:  queries.QueryTypeData,
 	}
 
-	res := entityRepoImpl.ByQuery(q)
+	res := entityRepo.ByQuery(q)
 	if res.Error != nil {
 		t.Error(res.Error)
 	}

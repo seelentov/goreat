@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func NewInMemoryDB() (*gorm.DB, error) {
+func NewSQLiteInMemoryDB() (*gorm.DB, error) {
 	db, err := newDB(sqlite.Open("file::memory:?cache=shared"))
 	if err != nil {
 		return nil, err
@@ -17,7 +17,7 @@ func NewInMemoryDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-func NewFileDB(filepath string) (*gorm.DB, error) {
+func NewSQLiteFileDB(filepath string) (*gorm.DB, error) {
 	db, err := newDB(sqlite.Open(filepath))
 	if err != nil {
 		return nil, err
