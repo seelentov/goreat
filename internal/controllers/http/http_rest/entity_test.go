@@ -71,5 +71,12 @@ func TestEntityRestController_PostGetData(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	t.Log(w.Body.String())
+	var ens []map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &ens); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(ens) == 0 {
+		t.Errorf("expected at least 1 entity, got 0")
+	}
 }

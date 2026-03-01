@@ -50,7 +50,7 @@ func TestQuery_ToDB(t *testing.T) {
 	limit := uint(10)
 	q := Query{
 		Topic: "test",
-		Filters: []*Filter{
+		Filters: []Filter{
 			{
 				Field: "string",
 				Type:  FilterTypeContains,
@@ -62,7 +62,7 @@ func TestQuery_ToDB(t *testing.T) {
 				Value: "10",
 			},
 		},
-		Orders: []*Order{
+		Orders: []Order{
 			{
 				Field:     "int",
 				Direction: OrderDirectionAsc,
@@ -144,7 +144,7 @@ func TestQuery_ToDB_Count(t *testing.T) {
 
 	q := Query{
 		Topic: "test",
-		Filters: []*Filter{
+		Filters: []Filter{
 			{
 				Field: "int",
 				Type:  FilterTypeGreaterThan,
@@ -177,7 +177,7 @@ func TestQuery_ToDB_Exists(t *testing.T) {
 
 	q := Query{
 		Topic: "test",
-		Filters: []*Filter{
+		Filters: []Filter{
 			{
 				Field: "string",
 				Type:  FilterTypeEquals,
@@ -234,7 +234,7 @@ func TestQuery_ToDB_OffsetAndDescOrder(t *testing.T) {
 	offset := uint(2)
 	q := Query{
 		Topic: "test",
-		Orders: []*Order{
+		Orders: []Order{
 			{
 				Field:     "int",
 				Direction: OrderDirectionDesc,

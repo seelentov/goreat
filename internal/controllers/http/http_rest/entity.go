@@ -2,6 +2,7 @@ package http_rest
 
 import (
 	"goreat/internal/controllers/http/http_utils"
+	"goreat/internal/models/entities"
 	"goreat/internal/models/queries"
 	"goreat/internal/repo"
 	"net/http"
@@ -34,5 +35,5 @@ func (c *EntityRestController) PostGetData(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res.Entities)
+	ctx.JSON(http.StatusOK, entities.Flat(res.Entities))
 }
