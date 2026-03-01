@@ -27,13 +27,13 @@ func init() {
 }
 
 func msgForTag(fe validator.FieldError, localizer *i18n.Localizer) string {
-	var templateData map[string]interface{}
+	var templateData = make(map[string]interface{})
 
 	switch fe.Tag() {
 	case "oneof":
-		templateData = map[string]interface{}{"Param": fe.Param()}
+		templateData["Param"] = fe.Param()
 	case "min":
-		templateData = map[string]interface{}{"Param": fe.Param()}
+		templateData["Param"] = fe.Param()
 	}
 
 	msg, err := localizer.Localize(&i18n.LocalizeConfig{
@@ -58,14 +58,7 @@ func formatValidationErrors(err error, localizer *i18n.Localizer) map[string]str
 		return out
 	}
 
-	invalidReqMsg, _ := localizer.Localize(&i18n.LocalizeConfig{
-		MessageID: "InvalidRequest",
-	})
-	if invalidReqMsg == "" {
-		invalidReqMsg = "Invalid data format"
-	}
-
-	return map[string]string{"request": invalidReqMsg}
+	return map[string]string{}
 }
 
 func ShouldBindJSON(q any, ctx *gin.Context) map[string]string {

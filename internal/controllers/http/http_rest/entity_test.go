@@ -80,3 +80,42 @@ func TestEntityRestController_PostGetData(t *testing.T) {
 		t.Errorf("expected at least 1 entity, got 0")
 	}
 }
+
+func TestEntityRestController_PostGetData_ShouldBeError(t *testing.T) {
+	router := setupEntityRestController(t)
+
+	bodyData := queries.Query{
+		Filters: []queries.Filter{
+			{
+				Field: "string",
+				Type:  queries.FilterTypeContains,
+				Value: "1",
+			},
+			{
+				Field: "int",
+				Type:  queries.FilterTypeGreaterThan,
+				Value: "10",
+			},
+		},
+		Orders: []queries.Order{
+			{
+				Field:     "int",
+				Direction: queries.OrderDirectionAsc,
+			},
+		},
+		Type: queries.QueryTypeData,
+	}
+
+	bodyBytes, _ := json.Marshal(bodyData)
+
+	req, _ := http.NewRequest(http.MethodPost, "/get-data", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code == http.StatusOK {
+		t.Errorf("expected error, got %d", w.Code)
+	}
+}

@@ -15,6 +15,5 @@ var entityDbModels = []interface{}{
 
 var dbModels = append(
 	entityDbModels,
-	// &models.Page{},
-	// &models.QueryData{},
+	//&models.DBPage{},
 )
