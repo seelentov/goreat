@@ -15,15 +15,15 @@ const (
 )
 
 type Query struct {
-	Topic string
+	Topic string `json:"topic" binding:"required"`
 
-	Filters []*Filter
-	Orders  []*Order
+	Filters []Filter `json:"filters" binding:"omitempty,dive"`
+	Orders  []Order  `json:"orders" binding:"omitempty,dive"`
 
-	Limit  *uint
-	Offset *uint
+	Limit  *uint `json:"limit,omitempty" binding:"omitempty,min=1"`
+	Offset *uint `json:"offset,omitempty" binding:"omitempty"`
 
-	Type QueryType
+	Type QueryType `json:"type" binding:"oneof=0 1 2"`
 }
 
 func (q *Query) ToDB(db *gorm.DB, fTypes map[string]entities.FieldInfo) (*gorm.DB, error) {

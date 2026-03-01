@@ -5,7 +5,6 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func NewSQLiteInMemoryDB() (*gorm.DB, error) {
@@ -27,9 +26,7 @@ func NewSQLiteFileDB(filepath string) (*gorm.DB, error) {
 }
 
 func newDB(dialector gorm.Dialector) (*gorm.DB, error) {
-	db, err := gorm.Open(dialector, &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	db, err := gorm.Open(dialector, &gorm.Config{})
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect database: %w", err)

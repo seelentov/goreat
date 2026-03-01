@@ -8,6 +8,6 @@ const (
 )
 
 type Order struct {
-	Field     string
-	Direction OrderDirection
+	Field     string         `json:"field" binding:"required"`
+	Direction OrderDirection `json:"direction" binding:"oneof=0 1"`
 }

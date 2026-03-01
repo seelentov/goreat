@@ -1,0 +1,6 @@
+{
+  "required": "required",
+  "min": "must be at least {{.Param}}",
+  "oneof": "must be one of: {{.Param}}",
+  "test": "test"
+}

@@ -112,6 +112,32 @@ func TestQuery_ToDB(t *testing.T) {
 	}
 }
 
+func TestQuery_ToDB_Empty(t *testing.T) {
+	setup()
+	defer teardown()
+
+	q := Query{
+		Topic: "test",
+		Type:  QueryTypeData,
+	}
+
+	db, err := q.ToDB(database, db.TestTopicFields)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	db = db.Select("db_entities.*")
+	var ens []*entities.DBEntity
+	if err := db.Find(&ens).Error; err != nil {
+		t.Error(err)
+	}
+
+	if len(ens) == 0 {
+		t.Errorf("Expected at least 1 entity, got 0")
+	}
+}
+
 func TestQuery_ToDB_Count(t *testing.T) {
 	setup()
 	defer teardown()
