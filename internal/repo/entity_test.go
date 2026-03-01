@@ -153,7 +153,7 @@ func TestEntityRepositoryImpl_ByQuery(t *testing.T) {
 	limit := uint(10)
 	q := queries.Query{
 		Topic: "test",
-		Filters: []*queries.Filter{
+		Filters: []queries.Filter{
 			{
 				Field: "string",
 				Type:  queries.FilterTypeContains,
@@ -165,7 +165,7 @@ func TestEntityRepositoryImpl_ByQuery(t *testing.T) {
 				Value: "10",
 			},
 		},
-		Orders: []*queries.Order{
+		Orders: []queries.Order{
 			{
 				Field:     "int",
 				Direction: queries.OrderDirectionAsc,

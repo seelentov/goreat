@@ -3,6 +3,7 @@ package http_utils_test
 import (
 	"bytes"
 	"encoding/json"
+	"goreat/internal/controllers/http/http_mw"
 	"goreat/internal/controllers/http/http_utils"
 	"net/http"
 	"net/http/httptest"
@@ -40,7 +41,7 @@ func setupTestContext(body interface{}) (*gin.Context, *httptest.ResponseRecorde
 
 	bundle := i18n.NewBundle(language.English)
 	localizer := i18n.NewLocalizer(bundle, "en")
-	ctx.Set("localizer", localizer)
+	ctx.Set(http_mw.LocalizerKey, localizer)
 
 	return ctx, w
 }

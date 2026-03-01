@@ -1,6 +1,7 @@
 package db
 
 import (
+	"goreat/internal/models"
 	"goreat/internal/models/entities"
 )
 
@@ -15,5 +16,5 @@ var entityDbModels = []interface{}{
 
 var dbModels = append(
 	entityDbModels,
-	//&models.DBPage{},
+	&models.DBPage{},
 )
